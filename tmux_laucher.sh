@@ -1,4 +1,5 @@
 #!/bin/bash
+# tmux: bind-key q run-shell 'tmux neww "cd #{pane_current_path}; ~/.tinyquery/tmux_laucher.sh"'
 
 # Set the path to your Python script
 QUERY_SCRIPT="$HOME/.tinyquery/app.py"

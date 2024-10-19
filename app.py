@@ -18,6 +18,11 @@ def execute_query(db_file, query):
                 
                 # Calculate column widths
                 col_widths = [max(len(str(row[i])) for row in results + [column_names]) for i in range(len(column_names))]
+
+                # Print header
+                print("-" * (sum(col_widths) + 3 * (len(col_widths) - 1)))
+                print(" | ".join(name.ljust(width) for name, width in zip(column_names, col_widths)))
+                print("-" * (sum(col_widths) + 3 * (len(col_widths) - 1)))
                 
                 # Print rows
                 for row in results:
