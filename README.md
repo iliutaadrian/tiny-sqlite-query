@@ -16,7 +16,7 @@ TinyQuery is a lightning-fast, lightweight command-line tool designed for effort
 
 1. Clone the repository to your home directory:
    ```
-   git clone https://github.com/iliutaadrian/TinyQuery.git ~/.tinyquery
+   git clone https://github.com/iliutaadrian/tiny-query.git ~/.tinyquery
    ```
 
 2. Navigate to the project directory:
@@ -36,8 +36,7 @@ TinyQuery is a lightning-fast, lightweight command-line tool designed for effort
 
 5. Add the following to your `~/.zshrc` file (or `~/.bashrc` if you're using bash):
    ```
-   export PATH="$PATH:$HOME/.tinyquery"
-   alias query='python $HOME/.tinyquery/tinyquery.py'
+   alias query='python $HOME/.tinyquery/app.py'
    ```
 
 6. Reload your shell configuration:
