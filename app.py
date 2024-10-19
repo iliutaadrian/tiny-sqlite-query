@@ -1,4 +1,5 @@
 import sqlite3
+import readline
 import sys
 import os
 import argparse
@@ -138,6 +139,26 @@ def get_sort_options(table_info, table_name):
         except ValueError:
             print("Invalid input. Please enter a number or press Enter to skip sorting.")
 
+def setup_readline():
+    histfile = os.path.join(os.path.expanduser("~"), ".sqlite_query_tool_history")
+    try:
+        readline.read_history_file(histfile)
+        # default history len is -1 (infinite), which may grow unruly
+        readline.set_history_length(1000)
+    except FileNotFoundError:
+        pass
+
+    readline.parse_and_bind('"\e[A": history-search-backward')
+    readline.parse_and_bind('"\e[B": history-search-forward')
+
+    return histfile
+
+def input_with_history(prompt):
+    try:
+        return input(prompt)
+    finally:
+        readline.write_history_file(histfile)
+
 def main():
     parser = argparse.ArgumentParser(
         description="SQLite Database Query Tool",
@@ -153,6 +174,8 @@ This tool allows you to interact with SQLite databases. You can:
 - Perform custom queries with WHERE clauses
 - Delete data from tables
 
+Use the --quick option to automatically view the first 100 rows of the first table in the database.
+
 For more information, visit:
 https://github.com/your-repo/sqlite-query-tool
         """
@@ -160,7 +183,6 @@ https://github.com/your-repo/sqlite-query-tool
     parser.add_argument("-db", "--database", required=True, help="Path to the SQLite database file")
     parser.add_argument("--quick", action="store_true", help="Quickly view the first 100 rows of the first table")
 
-    # Handle incorrect parameters
     try:
         args = parser.parse_args()
     except SystemExit:
@@ -176,6 +198,10 @@ https://github.com/your-repo/sqlite-query-tool
 
     print("\nWelcome to the SQLite Database Query Tool!")
     print("=" * 40)
+    print("Use up and down arrow keys to navigate command history.")
+    
+    global histfile
+    histfile = setup_readline()
     
     table_info = get_schema_and_stats(db_file)
     
@@ -190,7 +216,7 @@ https://github.com/your-repo/sqlite-query-tool
         for i, table_name in enumerate(table_info.keys(), 1):
             print(f"{i}. {table_name}")
         
-        table_choice = input("\nSelect a table (enter number or table name, or 'q' to quit): ")
+        table_choice = input_with_history("\nSelect a table (enter number or table name, or 'q' to quit): ")
         
         if table_choice.lower() == 'q':
             print("Thank you for using the SQLite Database Query Tool. Goodbye!")
@@ -220,7 +246,7 @@ https://github.com/your-repo/sqlite-query-tool
             print("4. Choose another table")
             print("5. Change sort options")
             
-            choice = input("Enter your choice (0-5): ")
+            choice = input_with_history("Enter your choice (0-5): ")
             
             if choice == '0':
                 print("Returning to table selection...")
@@ -228,7 +254,7 @@ https://github.com/your-repo/sqlite-query-tool
             elif choice == '1':
                 while True:
                     select_rows_with_offset(db_file, table_name, offset, sort_column=sort_column, sort_order=sort_order)
-                    offset_change = input("Enter number of rows to move (positive or negative), or press Enter to return to menu: ")
+                    offset_change = input_with_history("Enter number of rows to move (positive or negative), or press Enter to return to menu: ")
                     if offset_change == "":
                         break
                     try:
@@ -236,7 +262,12 @@ https://github.com/your-repo/sqlite-query-tool
                     except ValueError:
                         print("Invalid input. Please enter a number or press Enter.")
             elif choice == '2':
-                prompt_where_clause(db_file, table_name)
+                where_clause = input_with_history(f"Enter a WHERE clause for {table_name} (or press Enter to skip): ")
+                if where_clause:
+                    query = f"SELECT * FROM {table_name} WHERE {where_clause} LIMIT 20"
+                else:
+                    query = f"SELECT * FROM {table_name} LIMIT 20"
+                execute_query(db_file, query)
             elif choice == '3':
                 delete_all_from_table(db_file, table_name)
             elif choice == '4':
