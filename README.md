@@ -4,13 +4,12 @@ TinyQuery is a lightning-fast, lightweight command-line tool designed for effort
 
 ![Screenshot 2024-10-19 at 12 00 05](https://github.com/user-attachments/assets/8be492ca-b662-44e3-b5b7-81e845f0b631)
 
-
 ## 🚀 Features
 - 🔍 Explore SQLite databases with ease
 - 📊 Execute custom queries with WHERE clauses
 - 🔀 Sort results by any column, ascending or descending
+- 🖥️ Tmux integration for quick access
 - ALL FROM CLI
-
 
 ## 🛠 Installation
 
@@ -29,19 +28,19 @@ TinyQuery is a lightning-fast, lightweight command-line tool designed for effort
    pip install -r requirements.txt
    ```
 
-4. Make the script executable:
-   ```
-   chmod +x tinyquery.py
-   ```
-
-5. Add the following to your `~/.zshrc` file (or `~/.bashrc` if you're using bash):
+4. Add the following to your `~/.zshrc` file (or `~/.bashrc` if you're using bash):
    ```
    alias query='python $HOME/.tinyquery/app.py'
    ```
 
-6. Reload your shell configuration:
+5. Reload your shell configuration:
    ```
    source ~/.zshrc
+   ```
+
+6. For tmux integration, add the following line to your `.tmux.conf`:
+   ```
+   bind-key q run-shell 'tmux neww "cd #{pane_current_path}; ~/.tinyquery/tmux_launcher.sh"'
    ```
 
 ## 🖥 Usage
@@ -53,6 +52,15 @@ query --db path/to/your/database.db
 ```
 
 Replace `path/to/your/database.db` with the actual path to your SQLite database file.
+
+### Tmux Launcher
+
+If you've set up the tmux integration, you can quickly launch TinyQuery in a new tmux window by pressing `prefix + q`. This will open a new window with TinyQuery, allowing you to select a database file using fzf.
+
+
+![Screenshot 2024-10-19 at 13 44 23](https://github.com/user-attachments/assets/c9bc6f66-acf0-4969-86e0-254c421d88b4)
+
+
 
 ## 💡 Example Usage
 
