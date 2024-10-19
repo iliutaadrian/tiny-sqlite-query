@@ -139,17 +139,50 @@ def get_sort_options(table_info, table_name):
             print("Invalid input. Please enter a number or press Enter to skip sorting.")
 
 def main():
-    parser = argparse.ArgumentParser(description="SQLite Database Query Tool")
-    parser.add_argument("--db", required=True, help="Path to the SQLite database file")
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description="SQLite Database Query Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python %(prog)s -db my_database.db
+  python %(prog)s -db path/to/database.db --quick
 
-    db_file = args.db
+This tool allows you to interact with SQLite databases. You can:
+- View database statistics and table schemas
+- Select and view data from tables
+- Perform custom queries with WHERE clauses
+- Delete data from tables
+
+For more information, visit:
+https://github.com/your-repo/sqlite-query-tool
+        """
+    )
+    parser.add_argument("-db", "--database", required=True, help="Path to the SQLite database file")
+    parser.add_argument("--quick", action="store_true", help="Quickly view the first 100 rows of the first table")
+
+    # Handle incorrect parameters
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        parser.print_help()
+        sys.exit(1)
+
+    db_file = args.database
 
     if not os.path.exists(db_file):
         print(f"Error: Database file '{db_file}' does not exist.")
+        parser.print_help()
         sys.exit(1)
 
+    print("\nWelcome to the SQLite Database Query Tool!")
+    print("=" * 40)
+    
     table_info = get_schema_and_stats(db_file)
+    
+    if args.quick:
+        quick_view(db_file, table_info)
+        sys.exit(0)
+    
     display_all_schemas(table_info)
     
     while True:
@@ -160,7 +193,7 @@ def main():
         table_choice = input("\nSelect a table (enter number or table name, or 'q' to quit): ")
         
         if table_choice.lower() == 'q':
-            print("Exiting...")
+            print("Thank you for using the SQLite Database Query Tool. Goodbye!")
             break
         
         try:
@@ -178,7 +211,8 @@ def main():
         offset = 0
         sort_column, sort_order = None, "ASC"
         while True:
-            print("\nOptions:")
+            print(f"\nCurrent table: {table_name}")
+            print("Options:")
             print("0. Exit")
             print(f"1. Select 20 rows (current offset: {offset})")
             print("2. Select with custom WHERE clause")
@@ -189,8 +223,8 @@ def main():
             choice = input("Enter your choice (0-5): ")
             
             if choice == '0':
-                print("Exiting...")
-                return
+                print("Returning to table selection...")
+                break
             elif choice == '1':
                 while True:
                     select_rows_with_offset(db_file, table_name, offset, sort_column=sort_column, sort_order=sort_order)
