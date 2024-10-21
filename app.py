@@ -3,6 +3,16 @@ import readline
 import sys
 import os
 import argparse
+import re
+
+def truncate_value(value, max_length=50):
+    # Convert to string and replace newlines and tabs with spaces
+    str_value = str(value).replace('\n', ' ').replace('\t', ' ')
+    # Remove multiple spaces
+    str_value = re.sub(r'\s+', ' ', str_value).strip()
+    if len(str_value) > max_length:
+        return str_value[:max_length - 3] + "..."
+    return str_value
 
 def execute_query(db_file, query):
     try:
@@ -16,8 +26,9 @@ def execute_query(db_file, query):
                 # Get column names
                 column_names = [description[0] for description in cursor.description]
                 
-                # Calculate column widths
-                col_widths = [max(len(str(row[i])) for row in results + [column_names]) for i in range(len(column_names))]
+                # Truncate and calculate column widths
+                truncated_results = [[truncate_value(value) for value in row] for row in results]
+                col_widths = [min(100, max(len(str(row[i])) for row in truncated_results + [column_names])) for i in range(len(column_names))]
 
                 # Print header
                 print("-" * (sum(col_widths) + 3 * (len(col_widths) - 1)))
@@ -25,7 +36,7 @@ def execute_query(db_file, query):
                 print("-" * (sum(col_widths) + 3 * (len(col_widths) - 1)))
                 
                 # Print rows
-                for row in results:
+                for row in truncated_results:
                     print(" | ".join(str(value).ljust(width) for value, width in zip(row, col_widths)))
                 
                 # Print footer with column names
@@ -93,7 +104,7 @@ def get_schema_and_stats(db_file):
 
 def display_all_schemas(table_info):
     for table_name, info in table_info.items():
-        print(f"\nTable: {table_name}")
+        print(f"\nTable: {table_name} - Row Count: {info['row_count']}")
         print("-" * (len(table_name) + 7))
         for column, data_type in info["schema"]:
             print(f"  {column} ({data_type})")
@@ -171,7 +182,6 @@ def main():
         epilog="""
 Examples:
   python %(prog)s -db my_database.db
-  python %(prog)s -db path/to/database.db --quick
 
 This tool allows you to interact with SQLite databases. You can:
 - View database statistics and table schemas
@@ -179,14 +189,11 @@ This tool allows you to interact with SQLite databases. You can:
 - Perform custom queries with WHERE clauses
 - Delete data from tables
 
-Use the --quick option to automatically view the first 100 rows of the first table in the database.
-
 For more information, visit:
 https://github.com/your-repo/sqlite-query-tool
         """
     )
     parser.add_argument("-db", "--database", required=True, help="Path to the SQLite database file")
-    parser.add_argument("--quick", action="store_true", help="Quickly view the first 100 rows of the first table")
 
     try:
         args = parser.parse_args()
@@ -210,13 +217,9 @@ https://github.com/your-repo/sqlite-query-tool
     
     table_info = get_schema_and_stats(db_file)
     
-    if args.quick:
-        quick_view(db_file, table_info)
-        sys.exit(0)
-    
-    display_all_schemas(table_info)
     
     while True:
+        display_all_schemas(table_info)
         print("\nAvailable tables:")
         for i, table_name in enumerate(table_info.keys(), 1):
             print(f"{i}. {table_name}")
@@ -242,7 +245,7 @@ https://github.com/your-repo/sqlite-query-tool
         offset = 0
         sort_column, sort_order = None, "ASC"
         while True:
-            print(f"\nCurrent table: {table_name}")
+            print(f"\nCurrent table: {table_name} - Row Count: {table_info[table_name]['row_count']}")
             print("Options:")
             print("0. Exit")
             print(f"1. Select 20 rows (current offset: {offset})")
