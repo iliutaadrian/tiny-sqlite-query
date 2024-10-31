@@ -155,19 +155,45 @@ def get_sort_options(table_info, table_name):
         except ValueError:
             print("Invalid input. Please enter a number or press Enter to skip sorting.")
 
+
 def setup_readline():
-    histfile = os.path.join(os.path.expanduser("~"), ".sqlite_query_tool_history")
     try:
-        readline.read_history_file(histfile)
-        # default history len is -1 (infinite), which may grow unruly
-        readline.set_history_length(1000)
-    except FileNotFoundError:
-        pass
-
-    readline.parse_and_bind('"\e[A": history-search-backward')
-    readline.parse_and_bind('"\e[B": history-search-forward')
-
+        # Create a valid history file path
+        histfile = os.path.join(os.path.expanduser("~"), ".sqlite_query_tool_history")
+        histfile = os.path.abspath(histfile)
+        
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(histfile), exist_ok=True)
+        
+        try:
+            readline.read_history_file(histfile)
+        except (FileNotFoundError, OSError):
+            # Create new history file
+            try:
+                with open(histfile, 'w') as f:
+                    pass
+            except (IOError, OSError) as e:
+                print(f"Warning: Could not create history file: {e}")
+                histfile = None
+        
+        if histfile:
+            # Set history length
+            readline.set_history_length(1000)
+            
+            # Configure key bindings if supported
+            try:
+                readline.parse_and_bind('"\e[A": history-search-backward')
+                readline.parse_and_bind('"\e[B": history-search-forward')
+            except (AttributeError, TypeError):
+                # Some readline implementations might not support these bindings
+                print("Note: Command history navigation might be limited")
+    
+    except Exception as e:
+        print(f"Warning: History file functionality disabled: {e}")
+        histfile = None
+    
     return histfile
+
 
 def input_with_history(prompt):
     try:
